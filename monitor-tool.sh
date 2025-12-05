@@ -23,18 +23,19 @@ while true; do
     echo "=== System Monitor ==="
     echo ""
 
-    # CPU-Auslastung berechnen
+    # CPU-Auslastung berechnen (einfach)
     CPU_LINE=$(top -bn1 | grep "Cpu(s)")
     CPU_IDLE=$(echo $CPU_LINE | awk '{print $8}' | sed 's/id,//')
-    if [ -z "$CPU_IDLE" ]; then
-        CPU_IDLE=100
+    if [ -z "$CPU_IDLE" ]; 
+        then CPU_IDLE=100; 
     fi
-    CPU_USAGE=$(awk "BEGIN {printf \"%.1f\", 100 - $CPU_IDLE}")
-    CPU_USAGE_INT=${CPU_USAGE%.*}
+
+    CPU_USAGE=$((100 - ${CPU_IDLE%.*}))
     echo "CPU: ${CPU_USAGE}%"
-    if [ "$CPU_USAGE_INT" -ge 90 ]; then
+
+    if [ "$CPU_USAGE" -ge 90 ]; then
         log_to_file CRITICAL "CPU-Auslastung: ${CPU_USAGE}%"
-    elif [ "$CPU_USAGE_INT" -ge 75 ]; then
+    elif [ "$CPU_USAGE" -ge 75 ]; then
         log_to_file WARN "CPU-Auslastung: ${CPU_USAGE}%"
     fi
 
