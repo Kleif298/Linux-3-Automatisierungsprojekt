@@ -21,7 +21,7 @@ while [ true ]; do
     echo "Freier RAM: $free_ram"
 
     # Freier Festplattenspeicher im Wurzelverzeichnis
-    free_disk=$(df -h /mnt/c | awk 'NR==2 {print $4}')
+    free_disk=$(df -h | awk 'NR==2 {print $4}')
     echo "Freier Festplattenspeicher (/): $free_disk"
 
     sleep 60
