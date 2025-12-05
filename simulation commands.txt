@@ -1,0 +1,5 @@
+RAM:
+stress --vm 2 --vm-bytes 10G --timeout 20
+
+CPU:
+stress --cpu 18 --timeout 20
