@@ -18,13 +18,15 @@ log_to_file() {
 
 echo "===== System Monitor Log gestartet am $(date '+%Y-%m-%d %H:%M:%S') =====" >> "$LOG_FILE"
 
-while [ true ]; do
+while true; do
     clear
     echo "=== System Monitor ==="
     echo ""
 
     # CPU-Auslastung
-    cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
+    cpu_line=$(top -bn1 | grep "Cpu(s)")
+    cpu_idle=$(echo $cpu_line | awk '{print $8}' | sed 's/id,//')
+    cpu_usage=$(awk "BEGIN {printf \"%.1f\", 100 - $cpu_idle}")
     cpu_usage_int=${cpu_usage%.*}
     echo "CPU: ${cpu_usage}%"
     
@@ -36,15 +38,17 @@ while [ true ]; do
 
 
     # RAM
-    used_ram_mb=$(free -m | awk '/Mem:/ {print $3}')
     total_ram_mb=$(free -m | awk '/Mem:/ {print $2}')
-    ram_percent=$((used_ram_mb * 100 / total_ram_mb))
-    echo "RAM: ${used_ram_mb}MB / ${total_ram_mb}MB (${ram_percent}%)"
+    used_ram_mb=$(free -m | awk '/Mem:/ {print $3}')
+    available_ram_mb=$(free -m | awk '/Mem:/ {print $7}')
+    used_without_cache=$((total_ram_mb - available_ram_mb))
+    ram_percent=$((used_without_cache * 100 / total_ram_mb))
+    echo "RAM: ${used_without_cache}MB / ${total_ram_mb}MB (${ram_percent}%) [${used_ram_mb}MB inkl. Cache]"
     
-    if [ "$used_ram_mb" -ge $((total_ram_mb - 500)) ]; then
-        log_to_file "CRITICAL" "RAM: ${used_ram_mb}MB / ${total_ram_mb}MB (${ram_percent}%)"
-    elif [ "$used_ram_mb" -ge $((total_ram_mb - 1000)) ]; then
-        log_to_file "WARN" "RAM: ${used_ram_mb}MB / ${total_ram_mb}MB (${ram_percent}%)"
+    if [ "$ram_percent" -ge 90 ]; then
+        log_to_file "CRITICAL" "RAM: ${used_ram_mb}MB / ${total_ram_mb}MB (${ram_percent}%) - Nur ${available_ram_mb}MB verfügbar"
+    elif [ "$ram_percent" -ge 75 ]; then
+        log_to_file "WARN" "RAM: ${used_ram_mb}MB / ${total_ram_mb}MB (${ram_percent}%) - Nur ${available_ram_mb}MB verfügbar"
     fi
 
     # Festplattenspeicher
@@ -55,7 +59,7 @@ while [ true ]; do
     
     if [ "$used_percent" -ge 90 ]; then
         log_to_file "CRITICAL" "Disk: ${used_disk} / ${total_disk} (${used_percent}%)"
-    elif [ "$used_percent" -ge 80 ]; then
+    elif [ "$used_percent" -ge 75 ]; then
         log_to_file "WARN" "Disk: ${used_disk} / ${total_disk} (${used_percent}%)"
     fi
 
